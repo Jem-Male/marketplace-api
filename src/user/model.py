@@ -19,7 +19,8 @@ class UserModel(Base):
     
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    email : Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
+    email : Mapped[str] = mapped_column(String(200), nullable=False)
+    number: Mapped[str] = mapped_column(String(15), nullable=False)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     image: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)

@@ -18,7 +18,7 @@ from src.user.dao import UserDAO
 from src.user.model import UserModel
 from src.user.auth import create_access_token, get_current_user
 from src.user.security import generate_password_hash, check_password_hash
-from sqlalchemy.ext.asyncio import AsyncSession
+
 
 
 class UserService:
@@ -190,7 +190,7 @@ class UserService:
         
         return UserDeleteResponse(id=user_id)
 
-    
+
     async def deactivate_user(self, user_id: int, user_data: UserDeleteRequest) -> UserDeactivateResponse:
             db_user = await self.user_dao.get_active_user_by_id(user_id)
             

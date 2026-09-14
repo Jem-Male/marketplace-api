@@ -20,11 +20,15 @@ class CategoryCreateRequest(BaseModel):
     description: Annotated[str | None, Field(min_length=0, max_length=1000)] = None
     image: str | None = None
     
+    model_config = ConfigDict(from_attributes=True)
+    
 
 class CategoryCreateResponse(BaseModel):
     id: Annotated[int, Field(..., gt=0)]
     message: str = "Category is registered"
     status: str = "success"
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CategoryUpdateRequest(BaseModel):
@@ -32,9 +36,30 @@ class CategoryUpdateRequest(BaseModel):
     description: Annotated[str | None, Field(min_length=0, max_length=1000)] = None
     image: str | None = None
     is_active: bool = True
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CategoryUpdateResponse(BaseModel):
     id: Annotated[int, Field(..., gt=0)]
     message: str = "Category is updates"
     status: str = "success"
+    
+    model_config = ConfigDict(from_attributes=True)
+    
+
+class CategoryDeactivateResponse(BaseModel):
+    id: Annotated[int, Field(..., gt=0)]
+    message: str = "category has deleted"
+    status: str = "success"
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CategoryDeleteResponse(BaseModel):
+    id: Annotated[int, Field(..., gt=0)]
+    message: str = "category has HARD deleted!"
+    status: str = "success"
+    
+    model_config = ConfigDict(from_attributes=True)
+    

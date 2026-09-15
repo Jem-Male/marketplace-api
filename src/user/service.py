@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from pydantic import TypeAdapter
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.user.schemas import (
     UserSchemasBase,

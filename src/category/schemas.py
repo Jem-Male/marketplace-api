@@ -25,7 +25,7 @@ class CategoryCreateRequest(BaseModel):
 
 class CategoryCreateResponse(BaseModel):
     id: Annotated[int, Field(..., gt=0)]
-    message: str = "Category is registered"
+    message: str = "Category is created"
     status: str = "success"
     
     model_config = ConfigDict(from_attributes=True)

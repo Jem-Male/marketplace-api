@@ -18,7 +18,8 @@ from src.category.model import CategoryModel
 class CategoryService:
     def __init__(self, session: AsyncSession):
         self.category_dao = CategoryDAO(session)
-    
+
+
     async def get_all_categories(self, skip: int, limit: int) -> list[CategorySchemasBase]:    
         if skip < 0 or limit <= 0 or limit < skip:
             raise HTTPException(
@@ -31,8 +32,8 @@ class CategoryService:
         return TypeAdapter(list[CategorySchemasBase]).validate_python(categories)
 
 
-    async def get_category_by_id(self, category_id: int) -> CategorySchemasBase:
-        category = await self.category_dao.get_category_by_id(category_id)
+    async def get_category_by_id(self, category_id: int, category_status: bool) -> CategorySchemasBase:
+        category = await self.category_dao.get_category_by_id(category_id, category_status)
         
         if category is None:
             raise HTTPException(
@@ -43,8 +44,8 @@ class CategoryService:
         return CategorySchemasBase.model_validate(category)
 
 
-    async def get_category_by_name(self, category_name: str) -> CategorySchemasBase:
-        category = await self.category_dao.get_category_by_name(category_name)
+    async def get_category_by_name(self, category_name: str, category_status: bool) -> CategorySchemasBase:
+        category = await self.category_dao.get_category_by_name(category_name, category_status)
         
         if category is None:
             raise HTTPException(
@@ -56,7 +57,7 @@ class CategoryService:
 
 
     async def create_new_category(self, category_data: CategoryCreateRequest) -> CategoryCreateResponse:
-        category_exist = await self.category_dao.get_category_by_name(category_data.name)
+        category_exist = await self.category_dao.get_category_by_name(category_data.name, True)
         if category_exist is not None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -71,7 +72,7 @@ class CategoryService:
 
 
     async def category_update(self, category_id: int, category_data: CategoryUpdateRequest) -> CategoryUpdateResponse:
-        category = await self.category_dao.get_category_by_id(category_id)
+        category = await self.category_dao.get_category_by_id(category_id, True)
         
         if category is None:
             raise HTTPException(
@@ -82,20 +83,23 @@ class CategoryService:
         update_data = category_data.model_dump(exclude_unset=True)
         
         if "name" in category_data:
-            exiting_category = await self.category_dao.get_category_by_name(update_data["name"])
+            exiting_category = await self.category_dao.get_category_by_name(update_data["name"], True)
             if exiting_category and exiting_category.id != category_id:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="category already registered"
                 )
         
-        updated_data = await self.category_dao.update_catetory(category_id, update_data)
+        for key, value in update_data.items():
+            setattr(category, key, value)
+        
+        updated_data = await self.category_dao.update_category(category)
         
         return CategoryUpdateResponse.model_validate(updated_data)
         
     
     async def deactivate_category(self, category_id: int) -> CategoryDeactivateResponse:
-        category = await self.category_dao.get_category_by_id(category_id)
+        category = await self.category_dao.get_category_by_id(category_id, True)
         
         if category is None:
             raise HTTPException(
@@ -103,18 +107,26 @@ class CategoryService:
                 detail="category in not found"
             )
         
-        return CategoryDeactivateResponse.model_validate(category)
-    
-    
-    async def delete_category(self, category_id: int, ) -> CategoryDeleteResponse:
-            db_category = await self.user_dao.get_deactive_category_by_id(category_id)
+        res = await self.category_dao.deactivate_category(category_id)
+        
+        if not res:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="fatal delet"
+            )
+        
+        return CategoryDeactivateResponse(id=category_id)
+
+
+    async def delete_category(self, category_id: int) -> CategoryDeleteResponse:
+            db_category = await self.category_dao.get_category_by_id(category_id, None)
             
             if db_category is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="category in not found"
                 )
-                        
+
             res = await self.category_dao.delete_category(category_id)
             
             if not res:
@@ -123,4 +135,4 @@ class CategoryService:
                     detail="fatal delet"
                 )
             
-            return CategoryDeleteResponse.model_validate(res)
+            return CategoryDeleteResponse(id = category_id)

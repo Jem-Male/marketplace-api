@@ -5,7 +5,9 @@ from src.category.schemas import(
     CategoryCreateRequest,
     CategoryCreateResponse,
     CategoryUpdateRequest,
-    CategoryUpdateResponse
+    CategoryUpdateResponse,
+    CategoryDeactivateResponse,
+    CategoryDeleteResponse
 )
 from src.category.service import CategoryService
 from src.database import get_db
@@ -29,7 +31,7 @@ async def get_all_categories(skip: int=0, limit: int=100, session = Depends(get_
 
 @category_router.get('/get/{category_id}', response_model=CategorySchemasBase)
 async def get_category_by_id(category_id: int, session = Depends(get_db)):
-    category = await CategoryService(session).get_category_by_id(category_id)
+    category = await CategoryService(session).get_category_by_id(category_id, True)
     return category
 
 
@@ -43,7 +45,7 @@ async def update_category(
     return category
 
 
-@category_router.patch("/deactivate/{category_id}", response_model=)
+@category_router.patch("/deactivate/{category_id}", response_model = CategoryDeactivateResponse)
 async def category_deactivate(
     catrgory_id: int, 
     session = Depends(get_db)
@@ -52,23 +54,13 @@ async def category_deactivate(
     return res
 
 
-@user_router.delete("/delete/{user_id}", response_model=UserDeleteResponse)
-async def user_delete(
-    user_id: int, 
-    user_data: UserDeleteRequest,
-    current_user = Depends(get_current_user),
-    session = Depends(get_db)
-):
-    userService = UserService(session)
-    res = await userService.delete_user(user_id, user_data)
-    return res
+@category_router.get('/get/deactive/{category_id}', response_model=CategorySchemasBase)
+async def get_deactive_category_by_id(category_id: int, session = Depends(get_db)):
+    category = await CategoryService(session).get_category_by_id(category_id, False)
+    return category
 
 
-@user_router.get('/deactive/{user_id}', response_model=UserResponseSchemas)
-async def get_deactive_user(
-    user_id: int,
-    session = Depends(get_db)
-):
-    userService = UserService(session)
-    res = await userService.get_deactive_user_by_id(user_id)
+@category_router.delete("/delete/{category_id}", response_model = CategoryDeleteResponse)
+async def category_delete(category_id: int, session = Depends(get_db)):
+    res = await CategoryService(session).delete_category(category_id)
     return res

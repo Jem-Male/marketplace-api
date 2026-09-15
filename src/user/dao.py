@@ -6,9 +6,9 @@ from src.database import AsyncSessionLocal, get_db
 from src.user.model import UserModel
 
 class UserDAO:
-    
     def __init__(self, session: AsyncSession):
         self.session = session
+    
     
     async def get_active_user_by_id(self, user_id: int) -> UserModel | None:
         res = await self.session.execute(select(UserModel).where(UserModel.id==user_id, UserModel.is_active==True))
@@ -46,7 +46,6 @@ class UserDAO:
 
     
     async def update_user(self, db_user: UserModel) -> UserModel:
-        self.session.add(db_user)
         await self.session.commit()
         await self.session.refresh(db_user)
         return db_user

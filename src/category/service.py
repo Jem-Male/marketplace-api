@@ -27,7 +27,7 @@ class CategoryService:
                 detail="bad query"
             )
         
-        categories = await self.category_dao.get_all_categories(skip, limit)
+        stores = await self.store_dao.get_all_stores(skip, limit)
                 
         return TypeAdapter(list[CategorySchemasBase]).validate_python(categories)
 

@@ -12,7 +12,6 @@ from src.category.schemas import(
     CategoryDeleteResponse
 )
 from src.category.dao import CategoryDAO
-from src.category.model import CategoryModel
 
 
 class CategoryService:
@@ -27,7 +26,7 @@ class CategoryService:
                 detail="bad query"
             )
         
-        stores = await self.store_dao.get_all_stores(skip, limit)
+        categories = await self.category_dao.get_all_categories(skip, limit)
                 
         return TypeAdapter(list[CategorySchemasBase]).validate_python(categories)
 

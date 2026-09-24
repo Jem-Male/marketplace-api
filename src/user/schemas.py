@@ -42,7 +42,7 @@ class UserRegisterResponse(BaseModel):
     id: Annotated[int, Field(..., gt=0)]
     message: str = "user is registered"
     status: str = "success"
-    token: str
+    access_token: str
 
 
 class UserLoginRequest(BaseModel):

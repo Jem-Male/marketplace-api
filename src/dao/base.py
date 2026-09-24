@@ -10,35 +10,66 @@ CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 class BaseDAO(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
-    def __init__(self, model: Type[ModelType]):
-        self.model = model
+    
+    model: Type[ModelType]
+    
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def get_by_id(self, session: AsyncSession, record_id: Any) -> Optional[ModelType]:
-        result = await session.execute(select(self.model).where(self.model.id == record_id))
+    @classmethod
+    async def get_by_id(
+        cls, 
+        session: AsyncSession, 
+        record_id: Any, 
+        is_active: bool | None = None
+    ) -> Optional[ModelType]:
+        query = select(cls.model).where(cls.model.id == record_id)
+        
+        if is_active is not None:
+            query = query.where(cls.model.is_active==is_active)
+        
+        result = await session.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_all(self, session: AsyncSession, skip: int=0, limit: int=100) -> List[ModelType]:
+
+    @classmethod
+    async def get_all(
+        cls, 
+        session: AsyncSession, 
+        skip: int=0, 
+        limit: int=100,
+        is_active: bool | None = None
+    ) -> List[ModelType]:
+        query = select(cls.model)
+        if is_active is not None:
+            query = query.where(cls.model.is_active==is_active)
         result = await session.execute(
-            select(self.model).offset(skip).limit(limit)
+            query.offset(skip).limit(limit)
         )
         return result.scalars().all()
 
-    async def create(self, session: AsyncSession, schema: CreateSchemaType) -> ModelType:
-        db_obj = self.model(**schema.model_dump())
+
+    @classmethod
+    async def create(cls, session: AsyncSession, schema: CreateSchemaType) -> ModelType:
+        db_obj = cls.model(**schema.model_dump())
         session.add(db_obj)
         await session.commit()
         await session.refresh(db_obj)
         return db_obj
 
-    async def update(self, session: AsyncSession, record_id: Any, schema: UpdateSchemaType) -> Optional[ModelType]:
+
+    @classmethod
+    async def update(cls, session: AsyncSession, record_id: Any, schema: UpdateSchemaType) -> Optional[ModelType]:
         update_dict = schema.model_dump(exclude_unset=True)
-        stmt = update(self.model).where(self.model.id == record_id).values(**update_dict)
+        stmt = update(cls.model).where(cls.model.id == record_id).values(**update_dict)
         await session.execute(stmt)
         await session.commit()
-        return await self.get_by_id(session, record_id)
+        return await cls.get_by_id(session, record_id)
 
-    async def delete(self, session: AsyncSession, record_id: Any) -> bool:
-        stmt = delete(self.model).where(self.model.id == record_id)
+
+    @classmethod
+    async def delete(cls, session: AsyncSession, record_id: Any) -> bool:
+        stmt = delete(cls.model).where(cls.model.id == record_id)
         result = await session.execute(stmt)
         await session.commit()
         return result.rowcount > 0

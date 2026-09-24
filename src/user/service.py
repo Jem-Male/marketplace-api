@@ -57,7 +57,7 @@ class UserService:
         
         return UserRegisterResponse(
             id=created_user.id,
-            token=token
+            access_token=token
         )
     
     

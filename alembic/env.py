@@ -11,7 +11,7 @@ from src.database import Base
 from src.user.model import UserModel
 from src.category.model import CategoryModel
 from src.store.model import StoreModel
-# from src.item.model import ItemModel
+from src.item.model import ItemModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

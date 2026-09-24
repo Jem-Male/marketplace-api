@@ -19,11 +19,11 @@ class StoreModel(Base):
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     description: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     image: Mapped[str | None] = mapped_column(String(2048), nullable=True)    
-    legal_name: Mapped[str] = mapped_column(String(255), nullable=False)  # Например: ИП Иванов или ТОО "Ромашка"
-    bin_iin: Mapped[str] = mapped_column(String(12), unique=True, nullable=False)  # БИН/ИИН (или ИНН в РФ)
-    legal_address: Mapped[str] = mapped_column(String(500), nullable=False)  # Юридический адрес
-    tax_regime: Mapped[TaxRegime] = mapped_column(SqlEnum(TaxRegime), nullable=False)  # Налоговый режим
-    license_number: Mapped[str | None] = mapped_column(String(100), nullable=True)  # Лицензия (если алкоголь/табак)
+    legal_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    bin_iin: Mapped[str] = mapped_column(String(12), unique=True, nullable=False)
+    legal_address: Mapped[str] = mapped_column(String(500), nullable=False)
+    tax_regime: Mapped[TaxRegime] = mapped_column(SqlEnum(TaxRegime), nullable=False)
+    license_number: Mapped[str | None] = mapped_column(String(100), nullable=True)
     bank_account: Mapped[str] = mapped_column(String(34), nullable=False)
     bank_name: Mapped[str] = mapped_column(String(255), nullable=False)
     bik: Mapped[str] = mapped_column(String(11), nullable=False)

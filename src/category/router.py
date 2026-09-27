@@ -35,6 +35,12 @@ async def get_category_by_id(category_id: int, session = Depends(get_db)):
     return category
 
 
+@category_router.get('/get/name/{category_name}', response_model=CategorySchemasBase)
+async def get_category_by_name(category_name: str, session = Depends(get_db)):
+    category = await CategoryService(session).get_category_by_name(category_name, True)
+    return category
+
+
 @category_router.patch("/update/{category_id}", response_model=CategoryUpdateResponse)
 async def update_category(
     category_id: int,

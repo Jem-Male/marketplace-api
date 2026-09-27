@@ -3,6 +3,9 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.item.dao import ItemDAO
+from src.user.dao import UserDAO
+from src.category.dao import CategoryDAO
+from src.store.dao import StoreDAO
 from src.item.schemas import (
     ItemCreateSchema,
     ItemUpdaiteSchema, 
@@ -17,6 +20,27 @@ class ItemService:
     async def create_new_item(
         cls, session: AsyncSession, item_data: ItemCreateSchema, user_id: int
     ) -> ItemModel:
+        active_user = await UserDAO(session).get_active_user_by_id(user_id)
+        if not active_user:
+            raise HTTPException(
+                status_code = status.HTTP_403_FORBIDDEN,
+                detail = 'User not found'
+            )
+
+        active_category = await CategoryDAO(session).get_category_by_id(item_data.category)
+        if not active_category:
+            raise HTTPException(
+                status_code = status.HTTP_403_FORBIDDEN,
+                detail = 'Category not found'
+            )
+
+        active_store = await StoreDAO.get_by_id(session, item_data.store)
+        if not active_store:
+            raise HTTPException(
+                status_code = status.HTTP_403_FORBIDDEN,
+                detail = 'Store not found'
+            )
+        
         item_data = ItemCreateSchemaDB(**item_data.model_dump(), creator=user_id)
         return await ItemDAO.create(session, item_data)
 

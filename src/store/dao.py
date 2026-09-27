@@ -27,7 +27,7 @@ class StoreDAO(BaseDAO[StoreModel, StoreCreateRequest, StoreUpdateRequest]):
         
         if category_status is not None:
             query = query.where(StoreModel.is_active==category_status)
-                        
+
         res = await self.session.execute(query)
         return res.scalar_one_or_none()
 

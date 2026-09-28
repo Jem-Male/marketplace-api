@@ -10,6 +10,13 @@ stages:
 #   script:
 #     - echo "Собираем код и превращаем его в программу..."
 
+variables:
+  DB_HOST: localhost
+  DB_PORT: 5432
+  DB_USER: postgres
+  DB_PASSWORD: password
+  DB_NAME: test_db
+
 run_tests:
   stage: test
   script:

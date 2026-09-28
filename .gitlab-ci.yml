@@ -33,12 +33,12 @@
 # #   script:
 # #     - echo "Код проверен! Копируем файлы на живой сервер..."
 
-images: python:3.12-slim
+image: python:3.12-slim
 
 stages:
   - kaka
 
 run_kaka:
-  stages: kaka
+  stage: kaka
   script:
     - python ./ci_test.py

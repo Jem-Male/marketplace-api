@@ -1,21 +1,23 @@
-# 1. Сначала объявляем список этапов
+image: python:3.13-slim
+
 stages:
-  - build
+  # - build
   - test
-  - deploy
+  # - deploy
 
-# 2. Задачи для каждого этапа
-compile_code:
-  stage: build
-  script:
-    - echo "Собираем код и превращаем его в программу..."
+# compile_code:
+#   stage: build
+#   script:
+#     - echo "Собираем код и превращаем его в программу..."
 
-run_unit_tests:
+run_tests:
   stage: test
   script:
-    - echo "Запускаем тесты. Ищем ошибки..."
+    - pip install -r requirements.txt
+    - python -m pytest -s
 
-upload_to_server:
-  stage: deploy
-  script:
-    - echo "Код проверен! Копируем файлы на живой сервер..."
+
+# upload_to_server:
+#   stage: deploy
+#   script:
+#     - echo "Код проверен! Копируем файлы на живой сервер..."

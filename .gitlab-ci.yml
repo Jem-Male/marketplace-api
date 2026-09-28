@@ -19,6 +19,9 @@ variables:
 
 run_tests:
   stage: test
+  variables:
+    DB_PORT: ""
+    DB_HOST: ""
   script:
     - apt-get update && apt-get install -y --no-install-recommends gcc python3-dev libpq-dev
     - pip install -r requirements.txt

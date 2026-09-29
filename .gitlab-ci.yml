@@ -22,7 +22,7 @@ variables:
 
 run_tests:
   stage: test
-  services:
+  tags:
     - Local
   script:
     - apt-get update && apt-get install -y --no-install-recommends gcc python3-dev libpq-dev

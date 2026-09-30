@@ -28,7 +28,7 @@ async def get_all(
     limit: int = 100,
     session: AsyncSession = Depends(get_db)
 ):
-    return await ItemService.get_all_items(session, skip, limit)
+    return await ItemService.get_all_items(session, skip, limit, True)
 
 
 @item_router.post(

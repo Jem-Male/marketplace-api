@@ -9,8 +9,10 @@ compile_code:
   stage: build
   tags:
     - Local
+  image: docker:latest
   script:
-    - docker build -t marketplace-api .
+    - docker build -t marketplace-api:latest .
+    - docker rm -f marketplace-api || True
     - docker run -d -p 8080:8000 --name marketplace-api marketplace-api
 
 variables:

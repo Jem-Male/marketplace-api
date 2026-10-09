@@ -15,8 +15,8 @@ from src.store.schemas import(
 )
 
 class StoreDAO(BaseDAO[StoreModel, StoreCreateRequest, StoreUpdateRequest]):
+    
     model = StoreModel
-
 
     async def get_store_by_name(
         self,

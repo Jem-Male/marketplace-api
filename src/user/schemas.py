@@ -8,7 +8,7 @@ class UserSchemasBase(BaseModel):
     name: Annotated[str, Field(..., min_length=3, max_length=100)]
     email: EmailStr
     number: Annotated[str, Field(..., max_length=15)]
-    password: Annotated[str, Field(..., min_length=8, max_length=100)]
+    hashed_password: Annotated[str, Field(..., min_length=8, max_length=100)]
     description: Annotated[str | None, Field(min_length=0, max_length=1000)] = None
     image: str | None = None
     created_at: datetime
@@ -35,14 +35,20 @@ class UserRegisterRequest(BaseModel):
     email: EmailStr
     number: Annotated[str, Field(..., max_length=15)]
     password: Annotated[str, Field(..., min_length=8, max_length=100)]
-    description: Annotated[str | None, Field(min_length=0, max_length=1000)] = None
+
+
+class UserRegisterData(BaseModel):
+    name: Annotated[str, Field(..., min_length=3, max_length=100)]
+    email: EmailStr
+    number: Annotated[str, Field(..., max_length=15)]
+    hashed_password: Annotated[str, Field(..., max_length=255)]
 
 
 class UserRegisterResponse(BaseModel):
     id: Annotated[int, Field(..., gt=0)]
     message: str = "user is registered"
     status: str = "success"
-    access_token: str
+    access_token: Annotated[str, Field(...)]
 
 
 class UserLoginRequest(BaseModel):
@@ -60,13 +66,33 @@ class UserLoginResponse(BaseModel):
 
 
 class UserUpdateRequest(BaseModel):
-    name: Annotated[str | None, Field (min_length=3, max_length=100)] = None
-    number: Annotated[str | None, Field(..., max_length=15)] = None
+    name: Annotated[str | None, Field(min_length=3, max_length=100)] = None
+    number: Annotated[str | None, Field(max_length=15)] = None
     email: EmailStr | None = None
-    password: Annotated[str | None, Field (min_length=8, max_length=100)] = None
+    password: Annotated[str | None, Field(min_length=8, max_length=100)] = None
     description: Annotated[str | None, Field(min_length=0, max_length=1000)] = None
     image: str | None = None
-    is_active: bool = True
+
+
+class UserShemaMini(BaseModel):
+    id: Annotated[int, Field(..., gt=0)]
+    name: Annotated[str | None, Field(min_length=3, max_length=100)] = None
+    number: Annotated[str | None, Field(max_length=15)] = None
+    email: EmailStr | None = None
+    hashed_password: Annotated[str | None, Field (min_length=8, max_length=100)] = None
+    is_active: bool | None = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserUpdateData(BaseModel):
+    name: Annotated[str | None, Field(min_length=3, max_length=100)] = None
+    number: Annotated[str | None, Field(max_length=15)] = None
+    email: EmailStr | None = None
+    hashed_password: Annotated[str | None, Field (min_length=8, max_length=100)] = None
+    description: Annotated[str | None, Field(min_length=0, max_length=1000)] = None
+    image: str | None = None
+    is_active: bool | None = None
 
 
 class UserUpdateResponse(BaseModel):
@@ -81,11 +107,11 @@ class UserDeleteRequest(BaseModel):
 
 class UserDeleteResponse(BaseModel):
     id: Annotated[int, Field(..., gt=0)]
-    message: str = "user has HARD DELETED"
+    message: str = "user has deleted"
     status: str = "success"
 
 
 class UserDeactivateResponse(BaseModel):
     id: Annotated[int, Field(..., gt=0)]
-    message: str = "user has deleted"
+    message: str = "user has deactivated"
     status: str = "success"

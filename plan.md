@@ -26,7 +26,7 @@
   `item.creator` даёт HTTP 500. Проверять `if item is None`, возвращать 404 и
   добавить тесты update/delete для отсутствующего товара.
 
-- [ ] **Исправить маршрут деактивации категории.** В
+- [x] **Исправить маршрут деактивации категории.** В
   `src/category/router.py:48-53` в пути указан `{category_id}`, но функция
   принимает `catrgory_id`. FastAPI воспринимает последнее как обязательный
   query-параметр, поэтому `PATCH /category/deactivate/1` отвечает 422.
@@ -139,3 +139,23 @@
 - [ ] Добавить статический анализ (ruff) и проверку типов (mypy/pyright) в CI:
   они сразу выявили бы отсутствующие `await`, опечатку аргумента маршрута и
   несовпадение сигнатуры `get_all_items`.
+
+
+## Понять
+
+- [ ] **[security.py](src/user/security.py)** почему работает asynnc здесь? 
+
+- [ ] **[sevice.py](src/user/service.py)** line: 31 - 38. 
+```python
+    async def get_user_by_id(self, user_id: int, return_schema, is_active: bool | None = None) -> ???:
+        user = await self.user_dao.get_by_id(user_id, is_active)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="user in not found"
+            )
+        return return_schema.model_validate(user)
+```
+Нужно сделать возможность поставить правило возвращение результата: `def(a,b, ReturnShemas) -> ReturnShemas` 
+
+- [ ] **не хочу что бы все слилось в кашу по этому админку сделаю отдельно от user и всех роутов** 

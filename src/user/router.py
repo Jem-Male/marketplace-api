@@ -28,25 +28,23 @@ user_router = APIRouter(
 @user_router.get('/all')
 async def get_users(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 10000,
     session = Depends(get_db)
 ):
     userService = UserService(session)
-    res = await userService.get_users(skip, limit)
+    res = await userService.get_users(skip, limit, is_active=True)
     return res
 
 
 @user_router.get('/{user_id}', response_model=UserResponseSchemas)
 async def get_active_user(user_id: int, session = Depends(get_db)):
-    userService = UserService(session)
-    res = await userService.get_active_user_by_id(user_id)
+    res = await UserService(session).get_user_by_id(user_id, UserResponseSchemas, True)
     return res
 
 
 @user_router.post("/register", response_model=UserRegisterResponse)
 async def register(user_data: UserRegisterRequest, session = Depends(get_db)):
-    userService = UserService(session)
-    res = await userService.create_new_user(user_data)
+    res = await UserService(session).create_new_user(user_data)
     return res
 
 
@@ -55,8 +53,7 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_db)
 ):
-    userService = UserService(session)
-    res = await userService.login_user(
+    res = await UserService(session).login_user(
         email_or_phone = form_data.username,
         password = form_data.password
     )
@@ -75,8 +72,7 @@ async def update_user(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not enough privileges"
             )
-    userService = UserService(session)
-    res = await userService.user_update(user_id, user_data)
+    res = await UserService(session).user_update(user_id, user_data)
     return res
 
 
@@ -92,8 +88,7 @@ async def user_deactivate(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not enough privileges"
             )
-    userService = UserService(session)
-    res = await userService.deactivate_user(user_id, user_data)
+    res = await UserService(session).deactivate_user(user_id, user_data)
     return res
 
 
@@ -109,16 +104,5 @@ async def user_delete(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not enough privileges"
             )
-    userService = UserService(session)
-    res = await userService.delete_user(user_id, user_data)
-    return res
-
-
-@user_router.get('/deactive/{user_id}', response_model=UserResponseSchemas)
-async def get_deactive_user(
-    user_id: int,
-    session = Depends(get_db)
-):
-    userService = UserService(session)
-    res = await userService.get_deactive_user_by_id(user_id)
+    res = await UserService(session).delete_user(user_id, user_data)
     return res

@@ -18,6 +18,7 @@ from src.user.schemas import (
 from src.user.service import UserService
 from src.database import get_db
 from src.user.auth import create_access_token, get_current_user
+from src.user.model import UserRole
 
 
 user_router = APIRouter(
@@ -29,10 +30,16 @@ user_router = APIRouter(
 async def get_users(
     skip: int = 0,
     limit: int = 10000,
-    session = Depends(get_db)
+    session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
-    userService = UserService(session)
-    res = await userService.get_users(skip, limit, is_active=True)
+    print(current_user)
+    if current_user["role"]  != UserRole.ADMIN:
+        raise HTTPException(
+            status_code = status.HTTP_403_FORBIDDEN,
+            detail = "Not priveleges"
+        )
+    res = await UserService(session).get_users(skip, limit, is_active=True)
     return res
 
 
@@ -67,12 +74,7 @@ async def update_user(
     current_user = Depends(get_current_user),
     session = Depends(get_db)
 ):
-    if current_user != user_id:
-        raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not enough privileges"
-            )
-    res = await UserService(session).user_update(user_id, user_data)
+    res = await UserService(session).user_update(current_user, user_id, user_data)
     return res
 
 

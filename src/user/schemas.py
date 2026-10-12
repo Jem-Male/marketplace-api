@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import Annotated
 from datetime import datetime
+from src.user.model import UserRole
 
 
 class UserSchemasBase(BaseModel):
@@ -9,8 +10,14 @@ class UserSchemasBase(BaseModel):
     email: EmailStr
     number: Annotated[str, Field(..., max_length=15)]
     hashed_password: Annotated[str, Field(..., min_length=8, max_length=100)]
+    role: UserRole
     description: Annotated[str | None, Field(min_length=0, max_length=1000)] = None
     image: str | None = None
+    is_email_verified: bool = False
+    is_phone_verified: bool = False
+    
+    default_delivery_address: Annotated[str | None, Field(max_length=500)] = None
+
     created_at: datetime
     updated_at: datetime 
     is_active: bool = True
@@ -42,6 +49,7 @@ class UserRegisterData(BaseModel):
     email: EmailStr
     number: Annotated[str, Field(..., max_length=15)]
     hashed_password: Annotated[str, Field(..., max_length=255)]
+    role: UserRole
 
 
 class UserRegisterResponse(BaseModel):
@@ -72,6 +80,7 @@ class UserUpdateRequest(BaseModel):
     password: Annotated[str | None, Field(min_length=8, max_length=100)] = None
     description: Annotated[str | None, Field(min_length=0, max_length=1000)] = None
     image: str | None = None
+    default_delivery_address: Annotated[str | None, Field(max_length=500)] = None
 
 
 class UserShemaMini(BaseModel):
@@ -80,6 +89,7 @@ class UserShemaMini(BaseModel):
     number: Annotated[str | None, Field(max_length=15)] = None
     email: EmailStr | None = None
     hashed_password: Annotated[str | None, Field (min_length=8, max_length=100)] = None
+    role: UserRole
     is_active: bool | None = None
     
     model_config = ConfigDict(from_attributes=True)
@@ -90,9 +100,12 @@ class UserUpdateData(BaseModel):
     number: Annotated[str | None, Field(max_length=15)] = None
     email: EmailStr | None = None
     hashed_password: Annotated[str | None, Field (min_length=8, max_length=100)] = None
+    is_email_verified: bool | None = None
+    is_phone_verified: bool | None = None
     description: Annotated[str | None, Field(min_length=0, max_length=1000)] = None
     image: str | None = None
     is_active: bool | None = None
+    default_delivery_address: Annotated[str | None, Field(max_length=500)] = None
 
 
 class UserUpdateResponse(BaseModel):

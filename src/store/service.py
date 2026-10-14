@@ -12,11 +12,18 @@ from src.store.schemas import(
     StoreDeleteResponse
 )
 from src.store.dao import StoreDAO
+from src.store.exceptions import(
+    StoreErrors as StoreEr,
+    QueruErrors as QueruEr,
+    DBErrors as DBEr
+)
+from src.user.model import UserRole
 
 
 class StoreService:
     def __init__(self, session: AsyncSession):
         self.store_dao = StoreDAO(session)
+        self.session = session
 
 
     async def get_all_stores(
@@ -26,13 +33,9 @@ class StoreService:
         is_active: bool | None = None
     ) -> list[StoreSchemasBase]:
         if skip < 0 or limit <= 0 or limit < skip:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="bad query"
-            )
+            raise QueruEr.bad_query()
 
         stores = await self.store_dao.get_all(
-            self.store_dao.session,
             skip=skip,
             limit=limit,
             is_active=is_active
@@ -46,17 +49,14 @@ class StoreService:
         store_id: int,
         store_status: bool | None = True
     ) -> StoreSchemasBase:
+        
         store = await self.store_dao.get_by_id(
-            self.store_dao.session,
             record_id=store_id,
             is_active=store_status
         )
 
         if store is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="store is not found"
-            )
+            raise StoreEr.not_found()
 
         return StoreSchemasBase.model_validate(store)
 
@@ -67,36 +67,35 @@ class StoreService:
         store_status: bool | None = True
     ) -> StoreSchemasBase:
         store = await self.store_dao.get_store_by_name(
-            self.store_dao.session,
             store_name,
             store_status
         )
 
         if store is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="store is not found"
-            )
+            raise StoreEr.not_found()
 
         return StoreSchemasBase.model_validate(store)
 
 
     async def create_store(
         self,
-        store_data: StoreCreateRequest
+        store_data: StoreCreateRequest,
+        current_user: dict
     ) -> StoreCreateResponse:
-        store_exist = await self.store_dao.get_store_by_name(
-            store_data.name,
-            True
-        )
+        
+        if (
+            current_user["role"] != UserRole.ADMIN
+            and
+            current_user["role"] != UserRole.OWNER
+        ):
+            raise StoreEr.user_insufficient_privileges()
+        
+        store_exist = await self.store_dao.get_store_by_name(store_data.name, True)
 
         if store_exist is not None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="store already exists"
-            )
+            raise StoreEr.already_exists()
 
-        created_store = await self.store_dao.create (self.store_dao.session, store_data)
+        created_store = await self.store_dao.create(store_data)
 
         return StoreCreateResponse.model_validate(created_store)
 
@@ -104,88 +103,67 @@ class StoreService:
     async def update_store(
         self,
         store_id: int,
-        store_data: StoreUpdateRequest
+        store_data: StoreUpdateRequest,
+        current_user: dict
     ) -> StoreUpdateResponse:
-        store = await self.store_dao.get_by_id(self.store_dao.session, store_id, True)
-
-        if store is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="store is not found"
-            )
+        if (
+            current_user["role"] != UserRole.ADMIN
+            and
+            current_user["role"] != UserRole.OWNER
+        ):
+            raise StoreEr.user_insufficient_privileges()
+        
+        await self.get_store_by_id(store_id, True)
 
         update_data = store_data.model_dump(exclude_unset=True)
 
         if "name" in update_data:
-            existing_store = await self.store_dao.get_store_by_name(
-                update_data["name"],
-                True
-            )
+            existing_store = await self.store_dao.get_store_by_name(update_data["name"], True)
 
             if existing_store and existing_store.id != store_id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="store name already registered"
-                )
+                raise StoreEr.already_exists()
 
-        updated_data = await self.store_dao.update(
-            self.store_dao.session,
-            store_id,
-            store_data
-        )
+        updated_data = await self.store_dao.update(store_id, store_data)
 
         return StoreUpdateResponse.model_validate(updated_data)
 
 
     async def deactivate_store(
         self,
-        store_id: int
+        store_id: int,
+        current_user: dict
     ) -> StoreDeactivateResponse:
-        store = await self.store_dao.get_by_id(self.store_dao.session, store_id, True)
+        if (
+            current_user["role"] != UserRole.ADMIN
+            and
+            current_user["role"] != UserRole.OWNER
+        ):
+            raise StoreEr.user_insufficient_privileges()
+        
+        await self.get_store_by_id(store_id, True)
 
-        if store is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="store is not found"
-            )
-
-        res = await self.store_dao.update(
-            self.store_dao.session,
-            store_id,
-            StoreUpdateRequest(is_active=False)
-        )
+        res = await self.store_dao.update(store_id, StoreUpdateRequest(is_active=False))
 
         if not res:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="fatal error during deactivation"
-            )
+            raise DBEr.fatal_deactivaite()
 
         return StoreDeactivateResponse(id=store_id)
 
 
     async def delete_store(
         self,
-        store_id: int
+        store_id: int,
+        current_user: dict
     ) -> StoreDeleteResponse:
-        db_store = await self.store_dao.get_by_id(
-            self.store_dao.session,
-            store_id,
-            None
-        )
+        
+        if current_user["role"] != UserRole.ADMIN:
+            raise StoreEr.user_insufficient_privileges()
+        
+        await self.get_store_by_id(store_id ,None)
 
-        if db_store is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="store is not found"
-            )
-
-        res = await self.store_dao.delete(self.store_dao.session, store_id)
+        res = await self.store_dao.delete(store_id)
 
         if not res:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="fatal error during deletion"
-            )
+            raise DBEr.fatal_delet()
 
         return StoreDeleteResponse(id=store_id)

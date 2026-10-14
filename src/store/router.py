@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.store.schemas import(
     StoreSchemasBase,
@@ -11,6 +11,9 @@ from src.store.schemas import(
 )
 from src.store.service import StoreService
 from src.database import get_db
+from src.user.auth import get_current_user
+from src.user.model import UserRole
+
 
 store_router = APIRouter(
     tags=["Store"]
@@ -18,8 +21,12 @@ store_router = APIRouter(
 
 
 @store_router.post("/create", response_model=StoreCreateResponse)
-async def create_store(store_data: StoreCreateRequest, session = Depends(get_db)):
-    store = await StoreService(session).create_store(store_data)
+async def create_store(
+    store_data: StoreCreateRequest, 
+    session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    store = await StoreService(session).create_store(store_data, current_user)
     return store
 
 
@@ -39,28 +46,35 @@ async def get_store_by_id(store_id: int, session = Depends(get_db)):
 async def update_store(
     store_id: int,
     store_data: StoreUpdateRequest,
-    session = Depends(get_db)
+    session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
-    store = await StoreService(session).update_store(store_id, store_data)
+    store = await StoreService(session).update_store(store_id, store_data, current_user)
     return store
 
 
 @store_router.patch("/deactivate/{store_id}", response_model=StoreDeactivateResponse)
 async def deactivate_store(
     store_id: int, 
-    session = Depends(get_db)
+    session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
-    res = await StoreService(session).deactivate_store(store_id)
+    res = await StoreService(session).deactivate_store(store_id, current_user)
     return res
 
 
 @store_router.get('/get/deactive/{store_id}', response_model=StoreSchemasBase)
-async def get_deactivated_store_by_id(store_id: int, session = Depends(get_db)):
+async def get_deactivated_store_by_id(store_id: int, session = Depends(get_db), current_user = Depends(get_current_user)):
+    if current_user["role"] != UserRole.ADMIN.value:
+        raise HTTPException(
+            status_code = status.HTTP_403_FORBIDDEN,
+            detail = "No editing rights"   
+        )
     store = await StoreService(session).get_store_by_id(store_id, False)
     return store
 
 
 @store_router.delete("/delete/{store_id}", response_model=StoreDeleteResponse)
-async def delete_store(store_id: int, session = Depends(get_db)):
-    res = await StoreService(session).delete_store(store_id)
+async def delete_store(store_id: int, session = Depends(get_db), current_user = Depends(get_current_user)):
+    res = await StoreService(session).delete_store(store_id, current_user)
     return res

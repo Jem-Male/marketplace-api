@@ -20,14 +20,14 @@ class UserErrors:
     def email_is_exists():
         return HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="email already exits"
+            detail="email already exists"
         )
     
     @staticmethod
     def phone_is_exists():
         return HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="phone number already exits"
+            detail="phone number already exists"
         )
     
     @staticmethod

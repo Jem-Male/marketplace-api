@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from src.user.schemas import (
     UserSchemasBase,
+    UsersSchemas,
     UserRegisterRequest,
     UserRegisterData,
     UserRegisterResponse,
@@ -62,11 +63,11 @@ class UserService:
     async def create_new_user(self, user_data: UserRegisterRequest) -> UserRegisterResponse:
         mail_exist = await self.user_dao.get_user_by_email(user_data.email, is_active=True)
         if mail_exist is not None:
-            raise UserEr.email_is_exits()
+            raise UserEr.email_is_exists()
         
         phone_exist = await self.user_dao.get_user_by_phone(user_data.number, is_active=True)
         if phone_exist is not None:
-            raise UserEr.phone_is_exits()
+            raise UserEr.phone_is_exists()
         
         hashed_password = await generate_password_hash(user_data.password)
         
@@ -91,13 +92,13 @@ class UserService:
         )
 
 
-    async def get_users(self, skip: int, limit: int, is_active: bool | None = None) -> list[UserResponseSchemas]:
+    async def get_users(self, skip: int, limit: int, is_active: bool | None = None) -> list[UsersSchemas]:
         
         if skip < 0 or limit < 0:
             raise QueruEr.bad_query()
         
         users = await self.user_dao.get_all(skip, limit, is_active)
-        return TypeAdapter(list[UserResponseSchemas]).validate_python(users)
+        return TypeAdapter(list[UsersSchemas]).validate_python(users)
 
 
     async def login_user(self, email_or_phone: str, password: str) -> UserLoginResponse:
@@ -105,13 +106,10 @@ class UserService:
         if user is None:
             user = await self.user_dao.get_user_by_phone(email_or_phone, is_active=True)
         if user is None:
-            raise HTTPException(
-                status_code = status.HTTP_400_BAD_REQUEST,
-                detail = "Incorrect email/phone or password"
-            )
+            raise UserEr.incorrect_email_phone()
         user_verification = await check_password_hash(password, user.hashed_password)
         if not user_verification:
-            raise UserEr.valid_password()
+            raise UserEr.invalid_password()
         token_data = {
             "sub": str(user.id),
             "role": user.role
@@ -125,9 +123,7 @@ class UserService:
         )
 
 
-    async def user_update(self, current_user_id: int, user_id: int, user_data: UserUpdateRequest) -> UserUpdateResponse:
-        if current_user_id is not user_id:
-            raise UserEr.insufficient_privileges()
+    async def user_update(self, user_id: int, user_data: UserUpdateRequest) -> UserUpdateResponse:
 
         await self.get_user_by_id(user_id, UserResponseSchemas)
         update_data = user_data.model_dump(exclude_unset=True)
@@ -135,12 +131,12 @@ class UserService:
         if "email" in update_data:
             exiting_user = await self.user_dao.get_user_by_email(update_data["email"])
             if exiting_user and exiting_user.id != user_id:
-                raise UserEr.email_already_registered()
+                raise UserEr.email_is_exists()
         
         if "number" in update_data:
             phone_exist = await self.user_dao.get_user_by_phone(update_data["number"])
             if phone_exist is not None and phone_exist.id != user_id:
-                raise UserEr.email_already_registered()
+                raise UserEr.phone_is_exists()
         
         if "password" in update_data:
             update_data["hashed_password"] = await generate_password_hash(update_data.pop("password"))
@@ -155,10 +151,7 @@ class UserService:
 
     async def delete_user(self, user_id: int, user_data: UserDeleteRequest) -> UserDeleteResponse:
         db_user = await self.get_user_by_id(user_id, UserShemaMini)
-        
-        if db_user.role is not UserRole.ADMIN:
-            raise UserEr.insufficient_privileges()
-        
+                
         user_verification = await check_password_hash(user_data.password, db_user.hashed_password)
         
         if not user_verification:

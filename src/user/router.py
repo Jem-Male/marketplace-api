@@ -13,11 +13,12 @@ from src.user.schemas import (
     UserDeleteResponse,
     UserDeactivateResponse,
     UserDeleteRequest,
-    UserResponseSchemas
+    UserResponseSchemas,
+    UsersSchemas
 )
 from src.user.service import UserService
 from src.database import get_db
-from src.user.auth import create_access_token, get_current_user
+from src.user.auth import get_current_user
 from src.user.model import UserRole
 
 
@@ -26,15 +27,18 @@ user_router = APIRouter(
 )
 
 
-@user_router.get('/all')
+@user_router.get(
+    '/all',
+    response_model = list[UsersSchemas],
+    summary="get list users"
+)
 async def get_users(
     skip: int = 0,
     limit: int = 10000,
     session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    print(current_user)
-    if current_user["role"]  != UserRole.ADMIN:
+    if current_user["role"] != UserRole.ADMIN:
         raise HTTPException(
             status_code = status.HTTP_403_FORBIDDEN,
             detail = "Not priveleges"
@@ -44,7 +48,22 @@ async def get_users(
 
 
 @user_router.get('/{user_id}', response_model=UserResponseSchemas)
-async def get_active_user(user_id: int, session = Depends(get_db)):
+async def get_active_user(
+    user_id: int,
+    session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    if (
+        current_user["id"] != user_id and
+        current_user["role"] != UserRole.ADMIN and
+        current_user["role"] != UserRole.MANAGER and
+        current_user["role"]  != UserRole.OWNER
+    ):
+        raise HTTPException(
+            status_code = status.HTTP_403_FORBIDDEN,
+            detail = "Not priveleges"
+        )
+    
     res = await UserService(session).get_user_by_id(user_id, UserResponseSchemas, True)
     return res
 
@@ -74,7 +93,16 @@ async def update_user(
     current_user = Depends(get_current_user),
     session = Depends(get_db)
 ):
-    res = await UserService(session).user_update(current_user, user_id, user_data)
+    if (
+        current_user["id"] != user_id
+        and
+        current_user["role"] != UserRole.ADMIN
+    ):
+        raise HTTPException(
+            status_code = status.HTTP_403_FORBIDDEN,
+            detail = "Not priveleges"
+        )
+    res = await UserService(session).user_update(user_id, user_data)
     return res
 
 
@@ -85,7 +113,11 @@ async def user_deactivate(
     current_user = Depends(get_current_user),
     session = Depends(get_db)
 ):
-    if current_user != user_id:
+    if (
+        current_user["id"] != user_id 
+        and
+        current_user["role"] != UserRole.ADMIN
+    ):
         raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not enough privileges"
@@ -101,7 +133,7 @@ async def user_delete(
     current_user = Depends(get_current_user),
     session = Depends(get_db)
 ):
-    if current_user != user_id:
+    if current_user["role"] != UserRole.ADMIN:
         raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not enough privileges"

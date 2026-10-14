@@ -23,6 +23,25 @@ class UserSchemasBase(BaseModel):
     is_active: bool = True
     
 
+class UsersSchemas(BaseModel):
+    id: Annotated[int, Field(..., gt=0)]
+    name: Annotated[str, Field(..., min_length=3, max_length=100)]
+    email: EmailStr
+    number: Annotated[str, Field(..., max_length=15)]
+    role: UserRole
+    image: str | None = None
+    is_email_verified: bool = False
+    is_phone_verified: bool = False
+    
+    default_delivery_address: Annotated[str | None, Field(max_length=500)] = None
+
+    created_at: datetime
+    updated_at: datetime 
+    is_active: bool = True
+    
+    model_config = ConfigDict(from_attributes=True)
+
+
 class UserResponseSchemas(BaseModel):
     id: Annotated[int, Field(..., gt=0)]
     name: Annotated[str, Field(..., min_length=3, max_length=100)]

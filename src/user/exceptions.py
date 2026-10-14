@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 
 
-class UserErrors():
+class UserErrors:
     @staticmethod
     def user_not_found():
         return HTTPException(
@@ -17,31 +17,24 @@ class UserErrors():
         )
     
     @staticmethod
-    def email_is_exits():
+    def email_is_exists():
         return HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="email is exits"
+            detail="email already exits"
         )
     
     @staticmethod
-    def phone_is_exits():
+    def phone_is_exists():
         return HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="phone number is exits"
-        )
-
-    @staticmethod
-    def email_already_registered():
-        return HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="email already registered"
+            detail="phone number already exits"
         )
     
     @staticmethod
-    def phone_already_registered():
+    def incorrect_email_phone():
         return HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="phone already registered"
+            status_code = status.HTTP_400_BAD_REQUEST,
+            detail = "Incorrect email/phone or password"
         )
 
     @staticmethod
@@ -52,7 +45,7 @@ class UserErrors():
         )
 
 
-class QueruErrors():
+class QueruErrors:
     @staticmethod
     def bad_query():
         return HTTPException(

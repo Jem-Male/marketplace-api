@@ -15,6 +15,6 @@ async def welcome_msg():
 
 
 app.include_router(user_router, prefix='/user')
-# app.include_router(category_router, prefix='/category')
-# app.include_router(store_router, prefix='/store')
-# app.include_router(item_router, prefix='/item')
+app.include_router(category_router, prefix='/category')
+app.include_router(store_router, prefix='/store')
+app.include_router(item_router, prefix='/item')

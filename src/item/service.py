@@ -1,115 +1,89 @@
-from dns.update import Update
-from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.item.dao import ItemDAO
-from src.user.dao import UserDAO
-from src.category.dao import CategoryDAO
-from src.store.dao import StoreDAO
+from src.user.service import UserService
+from src.category.service import CategoryService
+from src.store.service import StoreService
 from src.item.schemas import (
     ItemCreateSchema,
-    ItemUpdaiteSchema, 
+    ItemUpdaiteSchema,
     ItemResponseSchema,
     ItemCreateSchemaDB
 )
 from src.item.model import ItemModel
+from backend.src.user.schemas import UserShemaMini
+from src.item.exceptions import (
+    ItemErrors as ItemEr,
+    QueruErrors as QueruEr
+)
+from src.user.model import UserRole
 
 
 class ItemService:
-    @classmethod
-    async def create_new_item(
-        cls, session: AsyncSession, item_data: ItemCreateSchema, user_id: int
-    ) -> ItemModel:
-        active_user = await UserDAO(session).get_active_user_by_id(user_id)
-        if not active_user:
-            raise HTTPException(
-                status_code = status.HTTP_403_FORBIDDEN,
-                detail = 'User not found'
-            )
-
-        active_category = await CategoryDAO(session).get_category_by_id(item_data.category)
-        if not active_category:
-            raise HTTPException(
-                status_code = status.HTTP_403_FORBIDDEN,
-                detail = 'Category not found'
-            )
-
-        active_store = await StoreDAO.get_by_id(session, item_data.store)
-        if not active_store:
-            raise HTTPException(
-                status_code = status.HTTP_403_FORBIDDEN,
-                detail = 'Store not found'
-            )
-        
-        item_data = ItemCreateSchemaDB(**item_data.model_dump(), creator=user_id)
-        return await ItemDAO.create(session, item_data)
-
-
-    @classmethod
-    async def get_item_safely(cls, session: AsyncSession, item_id: int) -> ItemModel:
-        item = await ItemDAO.get_by_id(session, item_id)
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        self.item_dao = ItemDAO(session)
+    
+    
+    async def get_item_safely(self, item_id: int) -> ItemModel:
+        item = await self.item_dao.get_by_id(item_id, is_active = True)
         if not item:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Товар с ID {item_id} не найден."
-            )
+            raise ItemEr.item_not_found()
+        
         return item
     
     
-    @classmethod
+    async def create_new_item(self, item_data: ItemCreateSchema, current_user: dict) -> ItemModel:
+        if  current_user["role"] == UserRole.CUSTOMER:
+            raise ItemEr.user_insufficient_privileges()
+        
+        await UserService(self.session).get_user_by_id(current_user["id"], UserShemaMini, is_active = True)
+        await CategoryService(self.session).get_category_by_id(item_data.category, is_active = True)
+        await StoreService(self.session).get_store_by_id(item_data.store, store_status = True)
+        
+        item_data = ItemCreateSchemaDB(**item_data.model_dump(), creator = current_user["id"])
+        return await self.item_dao.create(item_data)
+
+    
     async def get_all_items(
-        cls, session: AsyncSession, skip: int, limit: int, is_active: bool
+        self, skip: int, limit: int, is_active: bool = True
     ) -> ItemModel:
-        if limit < 0 or skip < 0 or limit < skip:
-            raise HTTPException(
-                status_code = status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail = "Bad request"
-            ) 
-        return await ItemDAO.get_all(session, skip, limit, is_active)
+        if limit < 0 or skip < 0:
+            raise QueruEr.bad_query()
+        
+        return await self.item_dao.get_all(skip, limit, is_active)
     
     
-    @classmethod
     async def update_item_safely(
-        cls, session: AsyncSession, item_id: int, item_data: ItemUpdaiteSchema, user_id: int
+        self, item_id: int, item_data: ItemUpdaiteSchema, user: dict
     ) -> ItemModel:
-        item = await ItemDAO.get_by_id(session, item_id)
+        if user["role"] == UserRole.CUSTOMER:
+            raise ItemEr.user_insufficient_privileges()
         
-        if item is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="category is not found"
-            )
-        try:
-            if item.creator != user_id:
-                raise HTTPException(
-                    status_code = status.HTTP_403_FORBIDDEN,
-                    detail = "No editing rights"
-                )
-        except:
-            raise HTTPException(
-                status_code = status.HTTP_400_BAD_REQUEST,
-                detail = "Err"
-            )
+        await self.get_item_safely(item_id)
         
-        return await ItemDAO.update(session, item_id, item_data)
+        return await self.item_dao.update(item_id, item_data)
     
     
-    @classmethod
-    async def delete_item_safely(
-        cls, session: AsyncSession, item_id: int, user_id: int
+    async def deactivate_item_safely(
+        self, item_id: int, user: dict
     ) -> bool:
-        item = await ItemDAO.get_by_id(session, item_id)
-                
-        if item is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="category is not found"
-            )
+        if user["role"] == UserRole.CUSTOMER:
+            raise ItemEr.user_insufficient_privileges()
         
-        if item.creator != user_id:
-            raise HTTPException(
-                status_code = status.HTTP_403_FORBIDDEN,
-                detail = "No editing rights"
-            )
+        await self.get_item_safely(item_id)
         
-        return await ItemDAO.delete(session, item_id)
+        deactivate_data = ItemUpdaiteSchema(is_active = False)
+        
+        return await self.item_dao.update(item_id, deactivate_data)
+    
+    
+    async def delete_item_safely(
+        self, item_id: int, user: dict
+    ) -> bool:
+        item = await self.get_item_safely(item_id)
+        
+        if user["id"] != item.creator and user["role"] == UserRole.CUSTOMER:
+            raise ItemEr.user_insufficient_privileges()
+        
+        return await self.item_dao.delete(item_id)

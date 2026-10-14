@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, HTTPException
 
 from src.database import get_db
 from src.item.service import ItemService
@@ -11,7 +11,7 @@ from src.item.schemas import (
     ItemResponseSchema,
     ItemUpdaiteSchema    
 )
-
+from src.user.model import UserRole
 
 item_router = APIRouter(
     prefix="/items",
@@ -25,10 +25,10 @@ item_router = APIRouter(
 )
 async def get_all(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 10000,
     session: AsyncSession = Depends(get_db)
 ):
-    return await ItemService.get_all_items(session, skip, limit, True)
+    return await ItemService(session).get_all_items(skip, limit, True)
 
 
 @item_router.post(
@@ -40,13 +40,9 @@ async def get_all(
 async def create_item(
     item_data: ItemCreateSchema,
     session: AsyncSession = Depends(get_db),
-    current_user_id = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
-    return await ItemService.create_new_item(
-        session,
-        item_data,
-        current_user_id
-    )
+    return await ItemService(session).create_new_item(item_data, current_user)
 
 
 @item_router.get(
@@ -58,7 +54,7 @@ async def get_current_item(
     item_id: int,
     session: AsyncSession = Depends(get_db)
 ):
-    return await ItemService.get_item_safely(session, item_id)
+    return await ItemService(session).get_item_safely(item_id)
 
 
 @item_router.put(
@@ -70,9 +66,9 @@ async def update_item(
     item_id: int,
     item_data: ItemUpdaiteSchema,
     session: AsyncSession = Depends(get_db),
-    current_user_id: int = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
-    return await ItemService.update_item_safely(session, item_id, item_data, current_user_id)
+    return await ItemService(session).update_item_safely(item_id, item_data, current_user)
 
 
 @item_router.delete(
@@ -83,7 +79,7 @@ async def update_item(
 async def delete_item(
     item_id: int,
     session: AsyncSession = Depends(get_db),
-    current_user_id: int = Depends(get_current_user)
+    current_user= Depends(get_current_user)
 ):
-    await ItemService.delete_item_safely(session, item_id, current_user_id)
+    await ItemService(session).delete_item_safely(item_id, current_user)
     return None

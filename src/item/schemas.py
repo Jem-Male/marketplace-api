@@ -60,5 +60,4 @@ class ItemUpdaiteSchema(BaseModel):
     category: Annotated[int | None, Field(gt=0)] = None
     store: Annotated[int | None, Field(gt=0)] = None
     stock: Annotated[int | None, Field(ge=0)] = None
-    updated_at: datetime
     is_active: bool | None = None

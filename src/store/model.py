@@ -10,7 +10,7 @@ class StoreModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     description: Mapped[str | None] = mapped_column(String(1000), nullable=True)
-    image: Mapped[str | None] = mapped_column(String(2048), nullable=True)        
+    image: Mapped[str | None] = mapped_column(String(50), nullable=True)        
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")

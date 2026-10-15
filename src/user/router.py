@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm 
 
 from src.user.schemas import (
@@ -104,6 +104,26 @@ async def update_user(
         )
     res = await UserService(session).user_update(user_id, user_data)
     return res
+
+
+@user_router.get("/image/{image_uuid}")
+async def get_user_image(
+    image_uuid: str,
+    session = Depends(get_db) 
+):
+   res = await UserService(session).get_user_image(image_uuid)
+   return res
+
+
+@user_router.post("/image", status_code = status.HTTP_201_CREATED)
+async def create_user_image(
+    image: UploadFile,
+    current_user = Depends(get_current_user),
+    session = Depends(get_db)
+):
+    res = await UserService(session).create_user_image(current_user["id"], image)
+    return res
+
 
 
 @user_router.patch("/deactivate/{user_id}", response_model=UserDeactivateResponse)

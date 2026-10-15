@@ -23,7 +23,7 @@ class ItemModel(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     price: Mapped[Decimal] = mapped_column(Numeric(precision=10, scale=2), nullable=False)
-    image: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
+    image: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     category: Mapped[int | None] = mapped_column(ForeignKey("categoryes.id", ondelete="RESTRICT"), nullable=True)
     creator: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     store: Mapped[int] = mapped_column(ForeignKey("stores.id", ondelete="RESTRICT"), nullable=False)

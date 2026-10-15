@@ -11,7 +11,7 @@ from src.item.schemas import (
     ItemCreateSchemaDB
 )
 from src.item.model import ItemModel
-from backend.src.user.schemas import UserShemaMini
+from src.user.schemas import UserShemaMini
 from src.item.exceptions import (
     ItemErrors as ItemEr,
     QueruErrors as QueruEr

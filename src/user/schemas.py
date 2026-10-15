@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import Annotated
 from datetime import datetime
 from src.user.model import UserRole
+from uuid import UUID, uuid4
 
 
 class UserSchemasBase(BaseModel):
@@ -98,7 +99,6 @@ class UserUpdateRequest(BaseModel):
     email: EmailStr | None = None
     password: Annotated[str | None, Field(min_length=8, max_length=100)] = None
     description: Annotated[str | None, Field(min_length=0, max_length=1000)] = None
-    image: str | None = None
     default_delivery_address: Annotated[str | None, Field(max_length=500)] = None
 
 
@@ -125,6 +125,8 @@ class UserUpdateData(BaseModel):
     image: str | None = None
     is_active: bool | None = None
     default_delivery_address: Annotated[str | None, Field(max_length=500)] = None
+    
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserUpdateResponse(BaseModel):

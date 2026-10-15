@@ -1,8 +1,10 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, UploadFile
 from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Type
+from uuid import uuid4, UUID
 from pydantic import BaseModel
+from src.file.file import File
 
 from src.user.schemas import (
     UserSchemasBase,
@@ -124,7 +126,6 @@ class UserService:
 
 
     async def user_update(self, user_id: int, user_data: UserUpdateRequest) -> UserUpdateResponse:
-
         await self.get_user_by_id(user_id, UserResponseSchemas)
         update_data = user_data.model_dump(exclude_unset=True)
         
@@ -147,6 +148,20 @@ class UserService:
         return UserUpdateResponse(
             id=updated_data.id
         )
+
+
+    async def create_user_image(self, user_id: int, image: UploadFile):
+        user = await self.get_user_by_id(user_id, UserUpdateData, True)
+        uidd = await File.create_image(image)
+        user.image = uidd
+        valid_image = UserUpdateData(image = uidd)
+        updated_image = await self.user_dao.update(record_id=user_id, schema=valid_image)
+        return updated_image
+    
+    
+    async def get_user_image(self, image_uuid):
+        image = await File.get_image(image_uuid)
+        return image
 
 
     async def delete_user(self, user_id: int, user_data: UserDeleteRequest) -> UserDeleteResponse:

@@ -34,7 +34,7 @@ class UserModel(Base):
     )
 
     description: Mapped[str | None] = mapped_column(String(1000), nullable=True)
-    image: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
+    image: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     
     is_email_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     is_phone_verified: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")

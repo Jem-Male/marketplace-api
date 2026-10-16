@@ -150,13 +150,13 @@ class UserService:
         )
 
 
-    async def create_user_image(self, user_id: int, image: UploadFile):
+    async def create_user_image(self, user_id: int, image: UploadFile) -> str:
         user = await self.get_user_by_id(user_id, UserUpdateData, True)
-        uidd = await File.create_image(image)
-        user.image = uidd
-        valid_image = UserUpdateData(image = uidd)
-        updated_image = await self.user_dao.update(record_id=user_id, schema=valid_image)
-        return updated_image
+        uuid = await File.create_image(image, user.image)
+        user.image = uuid
+        valid_image = UserUpdateData(image = uuid)
+        await self.user_dao.update(record_id=user_id, schema=valid_image)
+        return uuid
     
     
     async def get_user_image(self, image_uuid):

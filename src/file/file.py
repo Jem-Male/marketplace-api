@@ -1,5 +1,5 @@
 from pathlib import Path
-from uuid import uuid4, UUID
+from uuid import uuid4
 from fastapi import UploadFile, HTTPException, status
 from fastapi.responses import FileResponse
 
@@ -10,7 +10,7 @@ DIR = Path("./data/images")
 class File:
     @staticmethod
     async def create_image(upload_file: UploadFile) -> str:
-        file_extension = Path(upload_file.filename).suffix
+        file_extension = Path(upload_file.filename).suffix.lower()
         if file_extension not in ALLOWED_EXTENSIONS:
             raise HTTPException(
                 status_code = status.HTTP_400_BAD_REQUEST,
@@ -18,17 +18,22 @@ class File:
             )
         filename = f"{uuid4()}{file_extension}"
         file_path = DIR / filename
-        file = upload_file.file
+        content = await upload_file.read()
         
         with open(file_path, "wb") as f:
-            f.write(file.read())
-        print(f"Файлы сохраняются сюда: {DIR.resolve()}")  
+            f.write(content)
+            
         return str(filename)
     
     
     @staticmethod
-    async def get_image(image_uuid):
+    async def get_image(image_uuid: str):
+        if "/" in image_uuid or "\\":
+            raise HTTPException(
+                status_code = status.HTTP_400_BAD_REQUEST,
+                detail = "Invalid filename"
+            )
         image_path = DIR / image_uuid
         if not image_path.exists():
-            raise HTTPException(status_code=404, detail="Картинка не найдена")
+            raise HTTPException(status_code=404, detail="Image not found")
         return FileResponse(image_path)

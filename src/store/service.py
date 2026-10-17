@@ -1,7 +1,8 @@
 from pydantic import TypeAdapter
-from fastapi import HTTPException, status
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.file.file import File
 from src.store.schemas import(
     StoreSchemasBase,
     StoreCreateRequest,
@@ -127,6 +128,27 @@ class StoreService:
 
         return StoreUpdateResponse.model_validate(updated_data)
 
+    
+    async def create_store_image(self, store_id: int, user_data: dict, image: UploadFile) -> str:
+        if (
+            user_data["role"] != UserRole.ADMIN 
+            and 
+            user_data["role"] != UserRole.OWNER
+        ): raise StoreEr.user_insufficient_privileges()
+
+        store = await self.get_store_by_id(store_id, True)
+        
+        uuid = await File.create_image(image, store.image)
+        store.image = uuid
+        valid_image = StoreUpdateRequest(image = uuid)
+        await self.store_dao.update(record_id=store_id, schema=valid_image)
+        return uuid
+    
+    
+    async def get_store_image(self, image_uuid):
+        image = await File.get_image(image_uuid)
+        return image
+    
 
     async def deactivate_store(
         self,

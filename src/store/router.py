@@ -1,4 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import (
+    APIRouter, 
+    Depends, 
+    HTTPException, 
+    status,
+    UploadFile
+) 
 
 from src.store.schemas import(
     StoreSchemasBase,
@@ -36,6 +42,16 @@ async def get_all_stores(skip: int=0, limit: int=100, session = Depends(get_db))
     return stores
 
 
+@store_router.get("/image/{image_uuid}")
+async def get_store_image(
+    image_uuid: str,
+    session = Depends(get_db) 
+):
+   res = await StoreService(session).get_store_image(image_uuid)
+   return res
+
+
+
 @store_router.get('/get/{store_id}', response_model=StoreSchemasBase)
 async def get_store_by_id(store_id: int, session = Depends(get_db)):
     store = await StoreService(session).get_store_by_id(store_id, True)
@@ -51,6 +67,20 @@ async def update_store(
 ):
     store = await StoreService(session).update_store(store_id, store_data, current_user)
     return store
+
+
+@store_router.post("/image/{store_id}", status_code = status.HTTP_201_CREATED)
+async def create_store_image(
+    store_id: int,
+    image: UploadFile,
+    current_user = Depends(get_current_user),
+    session = Depends(get_db)
+):
+    image_name = await StoreService(session).create_store_image(store_id, current_user, image)
+    return {
+        "message": "Successfully created",
+        "image name": f"{image_name}"
+    }
 
 
 @store_router.patch("/deactivate/{store_id}", response_model=StoreDeactivateResponse)

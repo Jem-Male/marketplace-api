@@ -1,11 +1,10 @@
-from fastapi import HTTPException, status, UploadFile
+from fastapi import UploadFile
 from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Type
-from uuid import uuid4, UUID
 from pydantic import BaseModel
-from src.file.file import File
 
+from src.file.file import File
 from src.user.schemas import (
     UserSchemasBase,
     UsersSchemas,

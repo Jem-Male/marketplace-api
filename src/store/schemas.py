@@ -37,7 +37,7 @@ class StoreUpdateRequest(BaseModel):
     image: Annotated[str | None, Field(max_length=2048)] = None
     phone: Annotated[str | None, Field(min_length=7, max_length=20)] = None
     email: EmailStr | None = None
-    is_active: bool | None = None  # <--- ВАЖНОЕ ИСПРАВЛЕНИЕ!
+    is_active: bool | None = None
     
     model_config = ConfigDict(from_attributes=True)
 

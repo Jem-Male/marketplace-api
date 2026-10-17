@@ -1,5 +1,5 @@
 from pydantic import TypeAdapter
-from fastapi import HTTPException, status
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.category.schemas import(
@@ -11,13 +11,14 @@ from src.category.schemas import(
     CategoryDeactivateResponse,
     CategoryDeleteResponse
 )
+from src.file.file import File
 from src.category.dao import CategoryDAO
 from src.category.exceptions import (
     CategoryErrors as CategoryEr,
     QueruErrors as QueruEr,
     DBErrors as DBEr
 ) 
-
+from src.user.model import UserRole
 
 class CategoryService:
     def __init__(self, session: AsyncSession):
@@ -60,6 +61,29 @@ class CategoryService:
         
         return CategoryCreateResponse.model_validate(created_category)
 
+    
+    async def create_category_image(self, category_id: int, user_data: dict, image: UploadFile) -> str:
+        if (
+            user_data["role"] != UserRole.ADMIN 
+            and 
+            user_data["role"] != UserRole.OWNER
+            and
+            user_data["role"] != UserRole.MANAGER
+        ): raise CategoryEr.insufficient_privileges()
+
+        category = await self.get_category_by_id(category_id, is_active=True)
+        
+        uuid = await File.create_image(image, category.image)
+        category.image = uuid
+        valid_image = CategoryUpdateRequest(image = uuid)
+        await self.category_dao.update(record_id=category_id, schema=valid_image)
+        return uuid
+    
+    
+    async def get_category_image(self, image_uuid):
+        image = await File.get_image(image_uuid)
+        return image
+    
 
     async def category_update(self, category_id: int, category_data: CategoryUpdateRequest) -> CategoryUpdateResponse:
         await self.get_category_by_id(category_id, True)

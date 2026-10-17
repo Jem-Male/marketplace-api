@@ -1,5 +1,5 @@
 from src.user.auth import get_current_user
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile
 
 from src.category.schemas import(
     CategorySchemasBase,
@@ -26,15 +26,23 @@ async def get_all_categories(skip: int=0, limit: int=100, session = Depends(get_
     return categories
 
 
-@category_router.get('/get/{category_id}', response_model=CategorySchemasBase)
-async def get_category_by_id(category_id: int, session = Depends(get_db)):
-    category = await CategoryService(session).get_category_by_id(category_id, is_active = True)
-    return category
-
-
 @category_router.get('/get/name/{category_name}', response_model=CategorySchemasBase)
 async def get_category_by_name(category_name: str, session = Depends(get_db)):
     category = await CategoryService(session).get_category_by_name(category_name, True)
+    return category
+
+@category_router.get("/image/{image_uuid}")
+async def get_category_image(
+    image_uuid: str,
+    session = Depends(get_db) 
+):
+   res = await CategoryService(session).get_category_image(image_uuid)
+   return res
+
+
+@category_router.get('/get/{category_id}', response_model=CategorySchemasBase)
+async def get_category_by_id(category_id: int, session = Depends(get_db)):
+    category = await CategoryService(session).get_category_by_id(category_id, is_active = True)
     return category
 
 
@@ -69,6 +77,20 @@ async def update_category(
     
     category = await CategoryService(session).category_update(category_id, category_data)
     return category
+
+
+@category_router.post("/image/{category_id}", status_code = status.HTTP_201_CREATED)
+async def create_category_image(
+    category_id: int,
+    image: UploadFile,
+    current_user = Depends(get_current_user),
+    session = Depends(get_db)
+):
+    image_name = await CategoryService(session).create_category_image(category_id, current_user, image)
+    return {
+        "message": "Successfully created",
+        "image name": f"{image_name}"
+    }
 
 
 @category_router.patch("/deactivate/{category_id}", response_model = CategoryDeactivateResponse)

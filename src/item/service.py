@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import UploadFile
 
 from src.item.dao import ItemDAO
 from src.user.service import UserService
@@ -10,6 +11,7 @@ from src.item.schemas import (
     ItemResponseSchema,
     ItemCreateSchemaDB
 )
+from src.file.file import File
 from src.item.model import ItemModel
 from src.user.schemas import UserShemaMini
 from src.item.exceptions import (
@@ -63,6 +65,29 @@ class ItemService:
         await self.get_item_safely(item_id)
         
         return await self.item_dao.update(item_id, item_data)
+    
+    
+    async def create_item_image(self, item_id: int, user_data: dict, image: UploadFile) -> str:
+        if (
+            user_data["role"] != UserRole.ADMIN 
+            and 
+            user_data["role"] != UserRole.OWNER
+            and
+            user_data["role"] != UserRole.MANAGER
+        ): raise ItemEr.user_insufficient_privileges()
+
+        item = await self.get_item_safely(item_id)
+        
+        uuid = await File.create_image(image, item.image)
+        item.image = uuid
+        valid_image = ItemUpdaiteSchema(image = uuid)
+        await self.item_dao.update(record_id=item_id, schema=valid_image)
+        return uuid
+    
+    
+    async def get_item_image(self, image_uuid):
+        image = await File.get_image(image_uuid)
+        return image
     
     
     async def deactivate_item_safely(

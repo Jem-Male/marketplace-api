@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-from fastapi import APIRouter, status, Depends, HTTPException
+from fastapi import APIRouter, status, Depends, UploadFile
 
 from src.database import get_db
 from src.item.service import ItemService
@@ -11,10 +11,9 @@ from src.item.schemas import (
     ItemResponseSchema,
     ItemUpdaiteSchema    
 )
-from src.user.model import UserRole
+
 
 item_router = APIRouter(
-    prefix="/items",
     tags=["Items"]
 )
 
@@ -45,6 +44,15 @@ async def create_item(
     return await ItemService(session).create_new_item(item_data, current_user)
 
 
+@item_router.get("/image/{image_uuid}")
+async def get_item_image(
+    image_uuid: str,
+    session = Depends(get_db) 
+):
+   res = await ItemService(session).get_item_image(image_uuid)
+   return res
+
+
 @item_router.get(
     '/{item_id}',
     response_model=ItemResponseSchema,
@@ -69,6 +77,20 @@ async def update_item(
     current_user = Depends(get_current_user)
 ):
     return await ItemService(session).update_item_safely(item_id, item_data, current_user)
+
+
+@item_router.post("/image/{item_id}", status_code = status.HTTP_201_CREATED)
+async def create_item_image(
+    item_id: int,
+    image: UploadFile,
+    current_user = Depends(get_current_user),
+    session = Depends(get_db)
+):
+    image_name = await ItemService(session).create_item_image(item_id, current_user, image)
+    return {
+        "message": "Successfully created",
+        "image name": f"{image_name}"
+    }
 
 
 @item_router.delete(

@@ -117,11 +117,11 @@ async def update_user(
 
 @user_router.post("/image", status_code = status.HTTP_201_CREATED)
 async def create_user_image(
-    image: UploadFile,
+    file: UploadFile,
     current_user = Depends(get_current_user),
     session = Depends(get_db)
 ):
-    image_name = await UserService(session).create_user_image(current_user["id"], image)
+    image_name = await UserService(session).create_user_image(current_user["id"], file)
     return {
         "message": "Successfully created",
         "image name": f"{image_name}"
@@ -155,10 +155,5 @@ async def user_delete(
     current_user = Depends(get_current_user),
     session = Depends(get_db)
 ):
-    if current_user["role"] != UserRole.ADMIN:
-        raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not enough privileges"
-            )
-    res = await UserService(session).delete_user(user_id, user_data)
+    res = await UserService(session).delete_user(user_id, user_data, current_user)
     return res

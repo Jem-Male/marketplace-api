@@ -163,13 +163,18 @@ class UserService:
         return image
 
 
-    async def delete_user(self, user_id: int, user_data: UserDeleteRequest) -> UserDeleteResponse:
-        db_user = await self.get_user_by_id(user_id, UserShemaMini)
-                
-        user_verification = await check_password_hash(user_data.password, db_user.hashed_password)
+    async def delete_user(self, user_id: int, user_data: UserDeleteRequest, current_user: dict) -> UserDeleteResponse:
+        if current_user["role"] != UserRole.ADMIN:
+            raise UserEr.insufficient_privileges()
+
+        db_admin = await self.get_user_by_id(current_user["id"], UserShemaMini)
         
-        if not user_verification:
+        admin_verification = await check_password_hash(user_data.password, db_admin.hashed_password)
+        
+        if not admin_verification:
             raise UserEr.invalid_password()
+        
+        await self.get_user_by_id(user_id, UserShemaMini)
         
         res = await self.user_dao.delete(user_id)
         

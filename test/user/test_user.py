@@ -1,0 +1,113 @@
+from rich import json
+from urllib import response
+import pytest
+import pytest_asyncio
+from faker import Faker
+from src.user.model import UserModel
+from src.user.auth import create_access_token
+from src.user.security import generate_password_hash
+
+
+fake = Faker("RU-ru")
+
+@pytest.fixture
+def user_data():
+    return {
+        "name": fake.first_name(),
+        "email": fake.email(),
+        "number": fake.phone_number(),
+        "password": fake.password()
+    }
+
+
+@pytest_asyncio.fixture
+async def create_admin(db_session):
+    pasword = "SuperPass1234!"
+    hash_pass = await generate_password_hash(pasword)
+    admin = UserModel(
+        name="admin", 
+        email="admin@example.com", 
+        hashed_password=hash_pass,
+        is_active=True,
+        number="+71231231212",
+        role="admin",
+        is_email_verified=True,
+        is_phone_verified=True
+    )
+    
+    db_session.add(admin)
+    await db_session.commit()
+    await db_session.refresh(admin)
+    
+    yield admin
+
+
+@pytest_asyncio.fixture
+async def admin_token(create_admin):
+    token_data = {
+        "sub": str(create_admin.id),
+        "role": str("admin")
+    } 
+    return await create_access_token(token_data)
+
+@pytest_asyncio.fixture
+async def create_test_user(async_client, user_data):
+    response = await async_client.post("/user/register", json=user_data)
+    assert response.status_code == 200        
+    return {
+        **user_data,
+        "access_token": response.json().get("access_token"),
+        "id": response.json().get("id"),
+    }
+
+
+@pytest.mark.asyncio
+async def test_register_user(async_client, user_data):
+    response = await async_client.post("/user/register", json=user_data)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert "access_token" in data
+    assert data["message"] == "user is registered"
+    assert data["id"] > 0
+    
+
+@pytest.mark.asyncio
+async def test_login_user(async_client, create_test_user):
+    
+    login_data = {
+        "username": create_test_user["email"],
+        "password": create_test_user["password"]
+    }
+    response = await async_client.post("/user/login", data=login_data)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert "access_token" in data
+    assert data["message"] == "user has logged"
+    assert data["id"] > 0
+
+
+@pytest.mark.asyncio
+async def test_login_wrong_password(async_client, create_test_user):
+    login_data = {
+        "username": create_test_user["email"],
+        "password": "WrongPassword123!"
+    }
+    response = await async_client.post("/user/login", data=login_data)
+    assert response.status_code == 400 
+    assert response.json()["detail"] == "password is not valid"
+
+
+@pytest.mark.asyncio
+async def test_update_user(async_client, create_test_user, user_data):
+    header = {"Authorization": f"Bearer {create_test_user['access_token']}"}
+    response = await async_client.patch(f"/user/update/{create_test_user['id']}", json=user_data, headers=header)
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_get_all_user(async_client, admin_token):
+    header = {"Authorization": f"Bearer {admin_token}"}
+    response = await async_client.get("/user/all", headers=header)
+    assert response.status_code == 200

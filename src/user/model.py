@@ -25,7 +25,7 @@ class UserModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     email : Mapped[str] = mapped_column(String(200), nullable=False)
-    number: Mapped[str] = mapped_column(String(15), nullable=False)
+    number: Mapped[str] = mapped_column(String(25), nullable=False)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[UserRole] = mapped_column(
         SqlEnum(UserRole, values_callable=lambda obj: [e.value for e in obj]), 

@@ -9,7 +9,7 @@ class UserSchemasBase(BaseModel):
     id: Annotated[int, Field(..., gt=0)]
     name: Annotated[str, Field(..., min_length=3, max_length=100)]
     email: EmailStr
-    number: Annotated[str, Field(..., max_length=15)]
+    number: Annotated[str, Field(..., max_length=25)]
     hashed_password: Annotated[str, Field(..., min_length=8, max_length=100)]
     role: UserRole
     description: Annotated[str | None, Field(min_length=0, max_length=1000)] = None
@@ -28,7 +28,7 @@ class UsersSchemas(BaseModel):
     id: Annotated[int, Field(..., gt=0)]
     name: Annotated[str, Field(..., min_length=3, max_length=100)]
     email: EmailStr
-    number: Annotated[str, Field(..., max_length=15)]
+    number: Annotated[str, Field(..., max_length=25)]
     role: UserRole
     image: str | None = None
     is_email_verified: bool = False
@@ -47,7 +47,7 @@ class UserResponseSchemas(BaseModel):
     id: Annotated[int, Field(..., gt=0)]
     name: Annotated[str, Field(..., min_length=3, max_length=100)]
     email: EmailStr
-    number: Annotated[str, Field(..., max_length=15)]
+    number: Annotated[str, Field(..., max_length=25)]
     description: Annotated[str | None, Field(min_length=0, max_length=1000)] = None
     image: str | None = None
     created_at: datetime
@@ -60,14 +60,14 @@ class UserResponseSchemas(BaseModel):
 class UserRegisterRequest(BaseModel):
     name: Annotated[str, Field(..., min_length=3, max_length=100)]
     email: EmailStr
-    number: Annotated[str, Field(..., max_length=15)]
+    number: Annotated[str, Field(..., max_length=25)]
     password: Annotated[str, Field(..., min_length=8, max_length=100)]
 
 
 class UserRegisterData(BaseModel):
     name: Annotated[str, Field(..., min_length=3, max_length=100)]
     email: EmailStr
-    number: Annotated[str, Field(..., max_length=15)]
+    number: Annotated[str, Field(..., max_length=25)]
     hashed_password: Annotated[str, Field(..., max_length=255)]
     role: UserRole
 
@@ -80,7 +80,7 @@ class UserRegisterResponse(BaseModel):
 
 
 class UserLoginRequest(BaseModel):
-    number: Annotated[str | None, Field(..., max_length=15)] = None
+    number: Annotated[str | None, Field(..., max_length=25)] = None
     email: EmailStr | None = None
     password: Annotated[str, Field(..., min_length=8, max_length=100)]
 
@@ -95,7 +95,7 @@ class UserLoginResponse(BaseModel):
 
 class UserUpdateRequest(BaseModel):
     name: Annotated[str | None, Field(min_length=3, max_length=100)] = None
-    number: Annotated[str | None, Field(max_length=15)] = None
+    number: Annotated[str | None, Field(max_length=25)] = None
     email: EmailStr | None = None
     password: Annotated[str | None, Field(min_length=8, max_length=100)] = None
     description: Annotated[str | None, Field(min_length=0, max_length=1000)] = None
@@ -105,7 +105,7 @@ class UserUpdateRequest(BaseModel):
 class UserShemaMini(BaseModel):
     id: Annotated[int, Field(..., gt=0)]
     name: Annotated[str | None, Field(min_length=3, max_length=100)] = None
-    number: Annotated[str | None, Field(max_length=15)] = None
+    number: Annotated[str | None, Field(max_length=25)] = None
     email: EmailStr | None = None
     hashed_password: Annotated[str | None, Field (min_length=8, max_length=100)] = None
     role: UserRole
@@ -116,7 +116,7 @@ class UserShemaMini(BaseModel):
 
 class UserUpdateData(BaseModel):
     name: Annotated[str | None, Field(min_length=3, max_length=100)] = None
-    number: Annotated[str | None, Field(max_length=15)] = None
+    number: Annotated[str | None, Field(max_length=25)] = None
     email: EmailStr | None = None
     hashed_password: Annotated[str | None, Field (min_length=8, max_length=100)] = None
     is_email_verified: bool | None = None

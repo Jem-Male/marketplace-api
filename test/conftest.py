@@ -32,7 +32,15 @@ async def prepare_database():
 
     async with engine_test.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-        
+
+
+@pytest_asyncio.fixture
+async def db_session(prepare_database):
+    """Фикстура для предоставления сессии БД в тесты."""
+    async with TestingSessionLocal() as session:
+        yield session
+
+
 @pytest_asyncio.fixture
 async def async_client():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:

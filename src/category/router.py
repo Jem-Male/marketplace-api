@@ -19,6 +19,11 @@ category_router = APIRouter(
     tags=["Categories"]
 )
 
+@category_router.get('/get/{category_id}', response_model=CategorySchemasBase)
+async def get_category_by_id(category_id: int, session = Depends(get_db)):
+    category = await CategoryService(session).get_category_by_id(category_id, is_active = True)
+    return category
+
 
 @category_router.get('/get/all/', response_model = list[CategorySchemasBase])
 async def get_all_categories(skip: int=0, limit: int=100, session = Depends(get_db)):
@@ -26,10 +31,12 @@ async def get_all_categories(skip: int=0, limit: int=100, session = Depends(get_
     return categories
 
 
+
 @category_router.get('/get/name/{category_name}', response_model=CategorySchemasBase)
 async def get_category_by_name(category_name: str, session = Depends(get_db)):
     category = await CategoryService(session).get_category_by_name(category_name, True)
     return category
+
 
 @category_router.get("/image/{image_uuid}")
 async def get_category_image(
@@ -38,12 +45,6 @@ async def get_category_image(
 ):
    res = await CategoryService(session).get_category_image(image_uuid)
    return res
-
-
-@category_router.get('/get/{category_id}', response_model=CategorySchemasBase)
-async def get_category_by_id(category_id: int, session = Depends(get_db)):
-    category = await CategoryService(session).get_category_by_id(category_id, is_active = True)
-    return category
 
 
 @category_router.post("/create", response_model=CategoryCreateResponse)

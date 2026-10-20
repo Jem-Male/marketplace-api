@@ -62,15 +62,7 @@ class CategoryService:
         return CategoryCreateResponse.model_validate(created_category)
 
     
-    async def create_category_image(self, category_id: int, user_data: dict, image: UploadFile) -> str:
-        if (
-            user_data["role"] != UserRole.ADMIN 
-            and 
-            user_data["role"] != UserRole.OWNER
-            and
-            user_data["role"] != UserRole.MANAGER
-        ): raise CategoryEr.insufficient_privileges()
-
+    async def create_category_image(self, category_id: int, image: UploadFile) -> str:
         category = await self.get_category_by_id(category_id, is_active=True)
         
         uuid = await File.create_image(image, category.image)

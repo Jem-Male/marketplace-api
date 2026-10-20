@@ -83,11 +83,17 @@ async def update_category(
 @category_router.post("/image/{category_id}", status_code = status.HTTP_201_CREATED)
 async def create_category_image(
     category_id: int,
-    image: UploadFile,
+    file: UploadFile,
     current_user = Depends(get_current_user),
     session = Depends(get_db)
 ):
-    image_name = await CategoryService(session).create_category_image(category_id, current_user, image)
+    if current_user["role"] != UserRole.ADMIN:
+        raise HTTPException(
+            status_code = status.HTTP_403_FORBIDDEN,
+            detail = "Not priveleges"
+        )
+
+    image_name = await CategoryService(session).create_category_image(category_id, file)
     return {
         "message": "Successfully created",
         "image name": f"{image_name}"

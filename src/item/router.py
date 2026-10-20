@@ -82,11 +82,11 @@ async def update_item(
 @item_router.post("/image/{item_id}", status_code = status.HTTP_201_CREATED)
 async def create_item_image(
     item_id: int,
-    image: UploadFile,
+    file: UploadFile,
     current_user = Depends(get_current_user),
     session = Depends(get_db)
 ):
-    image_name = await ItemService(session).create_item_image(item_id, current_user, image)
+    image_name = await ItemService(session).create_item_image(item_id, current_user, file)
     return {
         "message": "Successfully created",
         "image name": f"{image_name}"

@@ -72,11 +72,11 @@ async def update_store(
 @store_router.post("/image/{store_id}", status_code = status.HTTP_201_CREATED)
 async def create_store_image(
     store_id: int,
-    image: UploadFile,
+    file: UploadFile,
     current_user = Depends(get_current_user),
     session = Depends(get_db)
 ):
-    image_name = await StoreService(session).create_store_image(store_id, current_user, image)
+    image_name = await StoreService(session).create_store_image(store_id, current_user, file)
     return {
         "message": "Successfully created",
         "image name": f"{image_name}"

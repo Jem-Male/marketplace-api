@@ -19,7 +19,7 @@ item_router = APIRouter(
 
 @item_router.get(
     "/all",
-    response_model=List[ItemBaseSchema],
+    response_model=List[ItemResponseSchema],
     summary = "get list items"
 )
 async def get_all(

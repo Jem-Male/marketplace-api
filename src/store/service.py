@@ -84,11 +84,7 @@ class StoreService:
         current_user: dict
     ) -> StoreCreateResponse:
         
-        if (
-            current_user["role"] != UserRole.ADMIN
-            and
-            current_user["role"] != UserRole.OWNER
-        ):
+        if current_user["role"] == "customer":
             raise StoreEr.user_insufficient_privileges()
         
         store_exist = await self.store_dao.get_store_by_name(store_data.name, True)

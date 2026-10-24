@@ -1,41 +1,38 @@
-image: python:3.12-slim
-
 stages:
   - test
   - build
-  # - deploy
-
-compile_code:
-  stage: build
-  tags:
-    - Local
-  image: docker:latest
-  script:
-    - docker build -t marketplace-api:latest .
-    - docker rm -f marketplace-api || True
-    - docker run -d -p 8080:8000 --name marketplace-api marketplace-api
-
-variables:
-  DATABASE_USER: "test"
-  DATABASE_PASSWORD: 12345678
-  DATABASE_HOST: "localhost"
-  DATABASE_PORT: 5432
-  DATABASE_NAME: "test"
-  ACCESS_TOKEN_EXPIRE_HOURS: 24
-  ALGORITHM: "HS256"
-  SECRET_KEY: "super_KEY"
 
 run_tests:
   stage: test
-  tags:
-    - Local
+  image: python:3.12-slim
+  services:
+    - postgres:16-alpine
+  variables:
+    POSTGRES_USER: test
+    POSTGRES_PASSWORD: "12345678"
+    POSTGRES_DB: test
+    DATABASE_USER: test
+    DATABASE_PASSWORD: "12345678"
+    DATABASE_HOST: postgres
+    DATABASE_PORT: "5432"
+    DATABASE_NAME: test
+    ACCESS_TOKEN_EXPIRE_HOURS: "24"
+    ALGORITHM: HS256
+    SECRET_KEY: test_key_only_for_ci
   script:
     - apt-get update && apt-get install -y --no-install-recommends gcc python3-dev libpq-dev
     - pip install -r requirements.txt
     - python -m pytest -s
 
-
-# upload_to_server:
-#   stage: deploy
-#   script:
-#     - echo "Код проверен! Копируем файлы на живой сервер..."
+build_image:
+  stage: build
+  image: docker:27
+  services:
+    - docker:27-dind
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - docker build -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA" -t "$CI_REGISTRY_IMAGE:latest" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
